@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Simple Name DApp</title>
+</head>
+<body>
+  <h1>Simple Name DApp</h1>
+  <button id="connectBtn">Connect Wallet</button>
+
+  <h3>Contract Address</h3>
+  <input id="contractAddress" placeholder="0x... (paste deployed contract address)" style="width:300px"/>
+
+  <h3>Set Your Name</h3>
+  <input id="nameInput" placeholder="Enter name"/>
+  <button id="saveBtn">Save Name</button>
+
+  <h3>Get Name</h3>
+  <button id="fetchBtn">Fetch Name</button>
+  <p>Result: <span id="nameOutput">—</span></p>
+  <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
+  <script>
+    const abi = [
+      {"inputs":[{"internalType":"string","name":"_name","type":"string"}],"name":"setName","outputs":[],"stateMutability":"nonpayable","type":"function"},
+      {"inputs":[],"name":"getName","outputs":[{"internalType":"string","name":"","type":"string"}],"stateMutability":"view","type":"function"}
+    ];
+
+    let provider, signer;
+
+    async function connect() {
+      if (!window.ethereum) { alert("Please install MetaMask"); return; }
+      provider = new ethers.providers.Web3Provider(window.ethereum);
+      await provider.send("eth_requestAccounts", []);
+      signer = provider.getSigner();
+    }
+
+    function getContract(readOnly=false) {
+      const addr = document.getElementById('contractAddress').value.trim();
+      if (!addr) { alert("Paste contract address first"); throw new Error("No address"); }
+      return new ethers.Contract(addr, abi, readOnly ? provider : signer);
+    }
+
+    async function saveName() {
+      const contract = getContract(false);
+      const name = document.getElementById('nameInput').value;
+      const tx = await contract.setName(name);
+      await tx.wait();
+      alert("Name saved!");
+    }
+
+    async function fetchName() {
+      const contract = getContract(true);
+      const name = await contract.getName();
+      document.getElementById('nameOutput').innerText = name;
+    }
+
+    document.getElementById('connectBtn').onclick = connect;
+    document.getElementById('saveBtn').onclick = saveName;
+    document.getElementById('fetchBtn').onclick = fetchName;
+  </script>
+</body>
+</html>
